@@ -38,7 +38,7 @@ def load_housing_data(housing_path=HOUSING_PATH):
 housing = load_housing_data()
 # head() shows top 5 rows with all the attributes
 # rows are districts, columns are attrs
-# print("HEAD \n", housing.head(), "\n")
+print("HEAD \n", housing.head(), "\n")
 # Quick description of the data, e.g.,
 # total # of rows, each attr's type, & the # of nonnull values
 # print("INFO")
@@ -68,38 +68,39 @@ housing = load_housing_data()
 # plt.show()
 
 # Creating a test set
-def split_train_test(data, test_ratio):
-    shuffled_indices = np.random.permutation(len(data))
-    test_set_size = int(len(data) * test_ratio)
-    test_indices = shuffled_indices[:test_set_size]
-    train_indices = shuffled_indices[test_set_size:]
-    return data.iloc[train_indices], data.iloc[test_indices]
+# def split_train_test(data, test_ratio):
+#     # np.random.seed(42)
+#     shuffled_indices = np.random.permutation(len(data))
+#     test_set_size = int(len(data) * test_ratio)
+#     test_indices = shuffled_indices[:test_set_size]
+#     train_indices = shuffled_indices[test_set_size:]
+#     return data.iloc[train_indices], data.iloc[test_indices]
 
-train_set, test_set = split_train_test(housing, 0.2)
-# print(len(train_set))
-# print(len(test_set))
+# train_set, test_set = split_train_test(housing, 0.2)
+# # print(len(train_set))
+# # print(len(test_set))
 
-# Possible implementation to use data point's id
-# to create stable test/train set
-def test_set_check(identifier, test_ratio):
-    return crc32(np.int64(identifier)) & 0xffffffff < test_ratio * 2**32
+# # Possible implementation to use data point's id
+# # to create stable test/train set
+# def test_set_check(identifier, test_ratio):
+#     return crc32(np.int64(identifier)) & 0xffffffff < test_ratio * 2**32
 
-def split_train_test_by_id(data, test_ratio, id_column):
-    ids = data[id_column]
-    in_test_set = ids.apply(lambda id_: test_set_check(id_, test_ratio))
-    return data.loc[~in_test_set], data.loc[in_test_set]
+# def split_train_test_by_id(data, test_ratio, id_column):
+#     ids = data[id_column]
+#     in_test_set = ids.apply(lambda id_: test_set_check(id_, test_ratio))
+#     return data.loc[~in_test_set], data.loc[in_test_set]
 
-# housing dataset does not have an id column, so use row index as id
-housing_with_id = housing.reset_index() # adds an `index` column
-#train_set, test_set = split_train_test_by_id(housing_with_id, 0.2, "index")
+# # housing dataset does not have an id column, so use row index as id
+# housing_with_id = housing.reset_index() # adds an `index` column
+# #train_set, test_set = split_train_test_by_id(housing_with_id, 0.2, "index")
 
 # # If you use the row index as a unique identifier, you need to make sure that new data
 # # gets appended to the end of the dataset and that no row ever gets deleted. If this is not
 # # possible, then you can try to use the most stable features to build a unique identifier.
 # # For example, a district’s latitude and longitude are guaranteed to be stable for a few
 # # million years, so you could combine them into an ID like so:
-housing_with_id["id"] = housing["longitude"] * 1000 + housing["latitude"]
-#train_set, test_set = split_train_test_by_id(housing_with_id, 0.2, "id")
+# housing_with_id["id"] = housing["longitude"] * 1000 + housing["latitude"]
+# # train_set, test_set = split_train_test_by_id(housing_with_id, 0.2, "id")
 
 # Scikit-Learn provides a few functions to split datasets into multiple subsets in various
 # ways. The simplest function is train_test_split(), which does pretty much the
@@ -108,15 +109,15 @@ housing_with_id["id"] = housing["longitude"] * 1000 + housing["latitude"]
 # seed. Second, you can pass it multiple datasets with an identical number of rows, and
 # it will split them on the same indices (this is very useful, for example, if you have a
 # separate DataFrame for labels):
-from sklearn.model_selection import train_test_split
-train_set, test_set = train_test_split(housing, test_size=0.2, random_state=42)
+# from sklearn.model_selection import train_test_split
+# train_set, test_set = train_test_split(housing, test_size=0.2, random_state=42)
 
 # Using pd.cut() to create an income category attr w/ 5 categories
 # labaled from 1 to 5; category 1 ranges form 0 to 1.5 (i.e., less than $15k),
 # category 2 from 1.5 to 3, etc.
 housing["income_cat"] = pd.cut(housing["median_income"], bins=[0., 1.5, 3.0, 4.5, 6., np.inf], labels=[1, 2, 3, 4, 5])
 # histogram for income categories
-housing["income_cat"].hist()
+# housing["income_cat"].hist()
 # plt.show()
 
 # Use scikit learn's stratified sampling class to do strat sampling based on income category
@@ -127,70 +128,75 @@ for train_index, test_index in split.split(housing, housing["income_cat"]):
     strat_train_set = housing.loc[train_index]
     strat_test_set = housing.loc[test_index]
 
-# Looking at the income category proportions in the test set
+# # Looking at the income category proportions in the test set
 # print("\nTest Set Income Category Proportions\n", strat_test_set["income_cat"].value_counts() / len(strat_test_set))
 
-# Looking at the income category proportions in the training set
-# print("\nTraining Set Income Category Proportions\n",strat_train_set["income_cat"].value_counts() / len(strat_train_set)) 
+# # Looking at the income category proportions in the training set
+# print("\nTraining Set Income Category Proportions\n", strat_train_set["income_cat"].value_counts() / len(strat_train_set)) 
 
-# Looking at the income category proportions in the full (train+test) set
-# print("\nFull Set Income Category Proportions\n",housing["income_cat"].value_counts() / len(housing))
+# # Looking at the income category proportions in the full (train+test) set
+# print("\nFull Set Income Category Proportions\n", housing["income_cat"].value_counts() / len(housing))
 
 # Remove the income_cat attribute so the data is back to its original state
 for set_ in (strat_train_set, strat_test_set):
     set_.drop("income_cat", axis=1, inplace=True)
 
-# # creating a copy of the training set
-# # re-using same var name
-# housing = strat_train_set.copy()
+# creating a copy of the training set
+# re-using same var name
+housing = strat_train_set.copy()
 
-# # Scatter plot to visualize all districts
+# Scatter plot to visualize all districts
 # housing.plot(kind="scatter", x="longitude", y="latitude")
-# #plt.show()
+# plt.show()
 
-# # Setting the alpha option to 0.1 makes it much easier to visualize the places
-# # where there is a high density of data points
+# Setting the alpha option to 0.1 makes it much easier to visualize the places
+# where there is a high density of data points
 # housing.plot(kind="scatter", x="longitude", y="latitude", alpha=0.1)
-# #plt.show()
+# plt.show()
 
-# # Looking at housing prices
-# # radius of each circle represents the district’s population (option s),
-# # and the color represents the price (option c).
-# # ranges from blue(low values) to red (high prices)
-# # In other words, red is expensive, blue is cheap, larger circles indicate
-# # areas with a larger population
+# Looking at housing prices
+# radius of each circle represents the district’s population (option s),
+# and the color represents the price (option c).
+# ranges from blue(low values) to red (high prices)
+# In other words, red is expensive, blue is cheap, larger circles indicate
+# areas with a larger population
+
+# Alpha var is for transparency
+# s is a kwarg, viz., a property to help with scale of figure (viz., housing[pop]/100)
+# c is a kward, viz., a property to impose a color map based on dif house values
 # housing.plot(kind="scatter", x="longitude", y="latitude", alpha=0.4,
-#     s=housing["population"]/100, label="population", figsize=(10,7),
-#     c="median_house_value", cmap=plt.get_cmap("jet"), colorbar=True,
-# )
+#             s=housing["population"]/100, label="population", figsize=(10,7),
+#             c="median_house_value", cmap=plt.get_cmap("jet"), colorbar=True)
 # plt.legend()
-# #plt.show()
+# plt.show()
 
-# # Computer the standard correlation coefficient (Pearson's r)
-# # using the corr() method
+# Looking for correlations
+# Computer the standard correlation coefficient (Pearson's r)
+# using the corr() method
 
 # corr_matrix = housing.corr()
 
 # # Look at how much each attr corrs with median house value
-# #print(corr_matrix["median_house_value"].sort_values(ascending=False))
-# # The correlation coefficient ranges from –1 to 1. When it is close to 1, it means that
-# # there is a strong positive correlation; for example, the median house value tends to go
-# # up when the median income goes up. When the coefficient is close to –1, it means
-# # that there is a strong negative correlation; you can see a small negative correlation
-# # between the latitude and the median house value (i.e., prices have a slight tendency to
-# # go down when you go north). Finally, coefficients close to 0 mean that there is no
-# # linear correlation; The correlation coefficient only measures linear correlations (“if x
-# # goes up, then y generally goes up/down”). It may completely miss out on
-# # nonlinear relationships (e.g., “if x is close to 0, then y generally goes up”).
+# print("Attr Correlations to Median House Value\n"+str(corr_matrix["median_house_value"].sort_values(ascending=False)))
+# The correlation coefficient ranges from –1 to 1. When it is close to 1, it means that
+# there is a strong positive correlation; for example, the median house value tends to go
+# up when the median income goes up. When the coefficient is close to –1, it means
+# that there is a strong negative correlation; you can see a small negative correlation
+# between the latitude and the median house value (i.e., prices have a slight tendency to
+# go down when you go north). Finally, coefficients close to 0 mean that there is no
+# linear correlation; The correlation coefficient only measures linear correlations (“if x
+# goes up, then y generally goes up/down”). It may completely miss out on
+# nonlinear relationships (e.g., “if x is close to 0, then y generally goes up”).
 
-# # Alternatively, using panda's scatter_matrix() to check for corrs;
-# # plots every num attr against every other num attr, but this scales
-# # exponentially, so it may not always fit on one page.
-# # Let's focus on a few promising attrs instead.
+# Alternatively, using panda's scatter_matrix() to check for corrs;
+# plots every num attr against every other num attr, but this scales
+# exponentially, so it may not always fit on one page.
+# Let's focus on a few promising attrs instead.
 # from pandas.plotting import scatter_matrix
 
 # attributes = ["median_house_value", "median_income", "total_rooms", "housing_median_age"]
 # scatter_matrix(housing[attributes], figsize=(12, 8))
+# plt.show()
 
 # # The main diagonal (top left to bottom right) would be full of straight lines if pandas
 # # plotted each variable against itself, which would not be very useful. So instead pandas
@@ -199,16 +205,16 @@ for set_ in (strat_train_set, strat_test_set):
 # # the median income, so let’s zoom in on their correlation scatterplot
 # housing.plot(kind="scatter", x="median_income", y="median_house_value",
 #     alpha=0.1)
-# #plt.show()
+# plt.show()
 
-# # Creating other, interesting attribute combinations
-# housing["rooms_per_household"] = housing["total_rooms"]/housing["households"]
-# housing["bedrooms_per_room"] = housing["total_bedrooms"]/housing["total_rooms"]
-# housing["population_per_household"]=housing["population"]/housing["households"]
+# Creating other, interesting attribute combinations
+housing["rooms_per_household"] = housing["total_rooms"]/housing["households"]
+housing["bedrooms_per_room"] = housing["total_bedrooms"]/housing["total_rooms"]
+housing["population_per_household"]=housing["population"]/housing["households"]
 
-# # Look at the corr matrix again
+# Look at the corr matrix again
 # corr_matrix = housing.corr()
-# #print(corr_matrix["median_house_value"].sort_values(ascending=False))
+# print(corr_matrix["median_house_value"].sort_values(ascending=False))
 
 # attributes = ["median_house_value", "median_income", "total_rooms", "housing_median_age", "rooms_per_household", "bedrooms_per_room", "population_per_household"]
 # scatter_matrix(housing[attributes], figsize=(12, 8))
