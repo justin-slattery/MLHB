@@ -286,9 +286,3 @@ housing["population_per_household"]=housing["population"]/housing["households"]
 
 
 
-
-
-
-
-
-
